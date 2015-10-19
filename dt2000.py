@@ -76,7 +76,16 @@ def integer_list_to_named_tuple(list_of_integers):
          997: namedtuple("RaceHeader", "type year month day id"),
          998: namedtuple("RaceHeader", "type year month day id"),
          999: namedtuple("RaceHeader", "type year month day id"),
-        10: namedtuple("LapTime",    "type minutes seconds hundreths lap"),
+        10: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
+        11: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
+        12: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
+        13: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
+        14: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
+        15: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
+        16: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
+        17: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
+        18: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
+        19: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
         20: namedtuple("AbsTime",    "type minutes seconds hundreths lap"),
         9930: namedtuple("Type30",     "type a b c laps"),
         9940: namedtuple("Type40",     "type a b c laps"),
@@ -101,7 +110,6 @@ def integer_list_to_named_tuple(list_of_integers):
     if tuple_type not in valid_types:
         # raise ValueError("Unable to convert list of integers to tuple; unknown record type [%d]." % tuple_type)
         return
-        named_tuple = null
     else:
     # Create a namedtuple based upon the tuple_type.
         named_tuple = valid_types[tuple_type]._make(list_of_integers)
@@ -198,10 +206,44 @@ if __name__ == "__main__":
     parser.add_option("-r", "--raceid",   dest="raceid",   metavar="NUM",  type=int, default=1,          help="Race ID to display.")
     (options, args) = parser.parse_args()
 
-#    current_race = 0
+    current_race = 0
     for record in readRecords(options.infile):
     	if record != None:
             print record
+            record_type_name = type(record).__name__
+            if record_type_name == 'RaceHeader':
+                print "New Race Detected"
+                elapsed_secs = 0L
+                position = 0
+                pos_hundredths = pos_secs = pos_mins = pos_hours = 0
+            elif record_type_name == 'LapTime':
+                # print "Process a finisher"
+                position += 1
+                lap_time_hours = record.type%10
+                lap_time_minutes = record.minutes
+                lap_time_secs = record.seconds
+                lap_time_hundredths = record.hundredths
+                elapsed_secs += (lap_time_hours * 3600 + lap_time_minutes * 60 + lap_time_secs + lap_time_hundredths / 100.0)
+                pos_hundredths += lap_time_hundredths # int((elapsed_secs - pos_secs) * 100)
+                if pos_hundredths >= 100:
+                    pos_hundredths = pos_hundredths%100
+                    pos_secs += 1
+                pos_secs += lap_time_secs # int(elapsed_secs - pos_hours * 3600 - pos_mins * 60)
+                if pos_secs >= 60:
+                    pos_secs = pos_secs%60
+                    pos_mins += 1
+                pos_mins += lap_time_minutes # int((elapsed_secs - pos_hours * 3600) / 60)
+                if pos_mins >= 60:
+                    pos_mins = pos_mins%60
+                    pos_hours += 1
+                pos_hours += lap_time_hours # int(elapsed_secs/3600)
+                if position != record.lap:
+                    raise ValueError("Mismatch between lap record and internal counter")
+                print "Finisher: " + str(position) + "  Finishing time: " + str(pos_hours) + " Hrs. " + str(pos_mins) + " Mins. " + str(pos_secs) + " Secs. " + str(pos_hundredths) + " Hundr. "
+            elif record_type_name == 'RaceEnd':
+                print "Race finished"
+
+
         # if record.type < 10:
         #     current_race = record.id
         # if (record.type == 20) and (current_race == options.raceid):
