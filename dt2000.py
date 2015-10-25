@@ -87,9 +87,36 @@ def integer_list_to_named_tuple(list_of_integers):
         18: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
         19: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
         20: namedtuple("AbsTime",    "type minutes seconds hundreths lap"),
-        9930: namedtuple("Type30",     "type a b c laps"),
-        9940: namedtuple("Type40",     "type a b c laps"),
+        30: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
+        31: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
+        32: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
+        33: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
+        34: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
+        35: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
+        36: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
+        37: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
+        38: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
+        39: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
+        40: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
+        41: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
+        42: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
+        43: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
+        44: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
+        45: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
+        46: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
+        47: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
+        48: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
+        49: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
         50: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
+        51: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
+        52: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
+        53: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
+        54: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
+        55: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
+        56: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
+        57: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
+        58: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
+        59: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
         9961: namedtuple("Type61",     "type a b c laps"),
         9966: namedtuple("Type66",     "type a b c laps"),
         9967: namedtuple("Type67",     "type a b c laps"),
@@ -209,7 +236,7 @@ if __name__ == "__main__":
     current_race = 0
     for record in readRecords(options.infile):
     	if record != None:
-            print record
+            # print record
             record_type_name = type(record).__name__
             if record_type_name == 'RaceHeader':
                 print "New Race Detected"
@@ -242,6 +269,18 @@ if __name__ == "__main__":
                 print "Finisher: " + str(position) + "  Finishing time: " + str(pos_hours) + " Hrs. " + str(pos_mins) + " Mins. " + str(pos_secs) + " Secs. " + str(pos_hundredths) + " Hundr. "
             elif record_type_name == 'RaceEnd':
                 print "Race finished"
+            elif record_type_name == 'AvLapTime':
+                av_lap_time_hours = record.type%10
+                av_lap_time_minutes = record.minutes
+                av_lap_time_secs = record.seconds
+                av_lap_time_hundredths = record.hundredths
+                print "Average Lap time: " + str(av_lap_time_hours) + " Hrs. " + str(av_lap_time_minutes) + " Mins. " + str(av_lap_time_secs) + " Secs. " + str(av_lap_time_hundredths) + " Hundr. "
+            elif record_type_name == 'FastestLapTime':
+                f_lap_time_hours = record.type%10
+                f_lap_time_minutes = record.minutes
+                f_lap_time_secs = record.seconds
+                f_lap_time_hundredths = record.hundredths
+                print "Fastest Lap time: " + str(f_lap_time_hours) + " Hrs. " + str(f_lap_time_minutes) + " Mins. " + str(f_lap_time_secs) + " Secs. " + str(f_lap_time_hundredths) + " Hundr. "
 
 
         # if record.type < 10:
