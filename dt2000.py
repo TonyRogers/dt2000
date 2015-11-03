@@ -127,8 +127,8 @@ def integer_list_to_named_tuple(list_of_integers):
         9988: namedtuple("Type88",     "type a b c laps"),
         90: namedtuple("RaceHeader", "type year month day id"),
         }
-
     # List of integers must be length of five.
+    print "list_of_integers = " + str(list_of_integers)
     if len(list_of_integers) != 5:
         raise ValueError("Unable to convert list of integers to tuple; incorrect number of integers.")
 
@@ -177,16 +177,32 @@ def readRecord(in_file):
 
     Returns the next record as a named tuples.
     """
-
+#    oldway = False
     while True:
 
-        # Records are always five bytes wide; read one record.
-        record_as_bsd_string = in_file.read(5)
-        if not record_as_bsd_string:
-            break
-        if len(record_as_bsd_string) != 5:
-            raise ValueError(":TODO:wrong length")
+        if not options.hexmode:
+            # Records are always five bytes wide; read one record.
+            record_as_bsd_string = in_file.read(5)
+            if not record_as_bsd_string:
+                break
+            if len(record_as_bsd_string) != 5:
+                raise ValueError(":TODO:wrong length")
+        else:
+            # Read from Bit Banged Serial
+            record_as_bsd_string = ''
+            # Read 5 bytes of 2 chars
+            for x in range(5):
+                raw_chars = in_file.read(2)
+                print "Read " + raw_chars
+                if not raw_chars:
+                    return
+                if len(raw_chars) != 2:
+                    raise ValueError(":TODO:wrong length")
 
+                # Swap chars
+                swapped_chars = raw_chars[0]+raw_chars[1]
+                # Append to record_as_bsd_string
+                record_as_bsd_string += chr(int(swapped_chars, 16))
         record_as_integer_list = bcd_string_to_integer_list(record_as_bsd_string)
         record_as_namedtuple = integer_list_to_named_tuple(record_as_integer_list)
         adjusted_record_as_namedtuple = adjust_lap_hundreds(record_as_namedtuple)
@@ -228,14 +244,26 @@ def readRecords(infile):
 
 if __name__ == "__main__":
     parser = optparse.OptionParser()
+    parser.add_option("--hex",
+                      dest="hexmode",
+                      default=0,
+                      action='store_const',
+                      const=1,
+                      help="if reading HEX file")
     parser.add_option("-f", "--infile",   dest="infile",   metavar="FILE",           default=sys.stdin,  help="Input file, stdin if not specified.")
     parser.add_option("-o", "--outfile",  dest="outfile",  metavar="FILE",           default=sys.stdout, help="Output file, stdout if not specified.")
     parser.add_option("-r", "--raceid",   dest="raceid",   metavar="NUM",  type=int, default=1,          help="Race ID to display.")
     (options, args) = parser.parse_args()
 
+    print "infile =" + str(options.infile)
+    print "hexmode = " + str(options.hexmode)
     current_race = 0
+    elapsed_secs = 0L
+    position = 0
+    pos_hundredths = pos_secs = pos_mins = pos_hours = 0
+
     for record in readRecords(options.infile):
-    	if record != None:
+        if record is not None:
             # print record
             record_type_name = type(record).__name__
             if record_type_name == 'RaceHeader':
@@ -246,7 +274,7 @@ if __name__ == "__main__":
             elif record_type_name == 'LapTime':
                 # print "Process a finisher"
                 position += 1
-                lap_time_hours = record.type%10
+                lap_time_hours = record.type % 10
                 lap_time_minutes = record.minutes
                 lap_time_secs = record.seconds
                 lap_time_hundredths = record.hundredths
