@@ -3,6 +3,7 @@ import optparse
 import sys
 import serial
 
+
 def static_vars(**kwargs):
     """Python decorator to declare static variables on a method.
 
@@ -19,6 +20,7 @@ def static_vars(**kwargs):
         return func
     return decorate
 
+
 def bcd_to_int(bcd_byte):
     """Converts a packed, little-endian, binary coded decimal to an int.
 
@@ -31,7 +33,8 @@ def bcd_to_int(bcd_byte):
 
     # Method only works on single bytes.
     if len(bcd_byte) > 1:
-        raise ValueError("Invalid length; bcdToInt() assumes single byte input.")
+        raise ValueError(
+            "Invalid length; bcdToInt() assumes single byte input.")
 
     # Get the tens place; value must be a single digit.
     tens = int((ord(bcd_byte) >> 0) & 0x0F)
@@ -43,7 +46,7 @@ def bcd_to_int(bcd_byte):
     # if (ones < 0) or (ones > 9):
     #     raise ValueError("Invalid BCD digit; ones place is not 0-9.")
 
-    return (tens*10 + ones)
+    return (tens * 10 + ones)
 
 
 def bcd_string_to_integer_list(bcd_string):
@@ -66,16 +69,16 @@ def integer_list_to_named_tuple(list_of_integers):
 
     # Dictionary mapping type id to record named tuples.
     valid_types = {
-         990: namedtuple("RaceHeader", "type year month day id"),
-         991: namedtuple("RaceHeader", "type year month day id"),
-         992: namedtuple("RaceHeader", "type year month day id"),
-         993: namedtuple("RaceHeader", "type year month day id"),
-         994: namedtuple("RaceHeader", "type year month day id"),
-         995: namedtuple("RaceHeader", "type year month day id"),
-         996: namedtuple("RaceHeader", "type year month day id"),
-         997: namedtuple("RaceHeader", "type year month day id"),
-         998: namedtuple("RaceHeader", "type year month day id"),
-         999: namedtuple("RaceHeader", "type year month day id"),
+        990: namedtuple("RaceHeader", "type year month day id"),
+        991: namedtuple("RaceHeader", "type year month day id"),
+        992: namedtuple("RaceHeader", "type year month day id"),
+        993: namedtuple("RaceHeader", "type year month day id"),
+        994: namedtuple("RaceHeader", "type year month day id"),
+        995: namedtuple("RaceHeader", "type year month day id"),
+        996: namedtuple("RaceHeader", "type year month day id"),
+        997: namedtuple("RaceHeader", "type year month day id"),
+        998: namedtuple("RaceHeader", "type year month day id"),
+        999: namedtuple("RaceHeader", "type year month day id"),
         10: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
         11: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
         12: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
@@ -97,16 +100,26 @@ def integer_list_to_named_tuple(list_of_integers):
         37: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
         38: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
         39: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
-        40: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
-        41: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
-        42: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
-        43: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
-        44: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
-        45: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
-        46: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
-        47: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
-        48: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
-        49: namedtuple("FastestLapTime",     "type minutes seconds hundredths laps"),
+        40: namedtuple("FastestLapTime",
+                       "type minutes seconds hundredths laps"),
+        41: namedtuple("FastestLapTime",
+                       "type minutes seconds hundredths laps"),
+        42: namedtuple("FastestLapTime",
+                       "type minutes seconds hundredths laps"),
+        43: namedtuple("FastestLapTime",
+                       "type minutes seconds hundredths laps"),
+        44: namedtuple("FastestLapTime",
+                       "type minutes seconds hundredths laps"),
+        45: namedtuple("FastestLapTime",
+                       "type minutes seconds hundredths laps"),
+        46: namedtuple("FastestLapTime",
+                       "type minutes seconds hundredths laps"),
+        47: namedtuple("FastestLapTime",
+                       "type minutes seconds hundredths laps"),
+        48: namedtuple("FastestLapTime",
+                       "type minutes seconds hundredths laps"),
+        49: namedtuple("FastestLapTime",
+                       "type minutes seconds hundredths laps"),
         50: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
         51: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
         52: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
@@ -126,22 +139,26 @@ def integer_list_to_named_tuple(list_of_integers):
         9986: namedtuple("Type86",     "type a b c laps"),
         9988: namedtuple("Type88",     "type a b c laps"),
         90: namedtuple("RaceHeader", "type year month day id"),
-        }
+    }
     # List of integers must be length of five.
     print "list_of_integers = " + str(list_of_integers)
     if len(list_of_integers) != 5:
-        raise ValueError("Unable to convert list of integers to tuple; incorrect number of integers.")
+        raise ValueError(
+            "Unable to convert list of integers to tuple; \
+             incorrect number of integers.")
 
     # First byte is the type; type must be known.
     tuple_type = list_of_integers[0]
     if tuple_type not in valid_types:
-        # raise ValueError("Unable to convert list of integers to tuple; unknown record type [%d]." % tuple_type)
+        # raise ValueError("Unable to convert list of integers to tuple; \
+        # unknown record type [%d]." % tuple_type)
         return
     else:
-    # Create a namedtuple based upon the tuple_type.
+        # Create a namedtuple based upon the tuple_type.
         named_tuple = valid_types[tuple_type]._make(list_of_integers)
 
     return named_tuple
+
 
 @static_vars(lap_hundreds=0, abs_hundreds=0)
 def adjust_lap_hundreds(record):
@@ -162,34 +179,36 @@ def adjust_lap_hundreds(record):
     elif record_type_name == 'LapTime':
         if record.lap == 0:
             adjust_lap_hundreds.lap_hundreds += 100
-        record = record._replace(lap=(record.lap + adjust_lap_hundreds.lap_hundreds))
+        record = record._replace(
+            lap=(record.lap + adjust_lap_hundreds.lap_hundreds))
 
     # Adjust abs by hundreds place; increment on overflow.
     elif record_type_name == 'AbsTime':
         if record.lap == 0:
             adjust_lap_hundreds.abs_hundreds += 100
-        record = record._replace(lap=(record.lap + adjust_lap_hundreds.abs_hundreds))
+        record = record._replace(
+            lap=(record.lap + adjust_lap_hundreds.abs_hundreds))
 
     return record
+
 
 def readRecord(in_file):
     """Generator to read each record from the input file.
 
     Returns the next record as a named tuples.
     """
-#    oldway = False
     while True:
 
         if not options.hexmode:
             # Records are always five bytes wide; read one record.
-            record_as_bsd_string = in_file.read(5)
-            if not record_as_bsd_string:
+            record_as_bcd_string = in_file.read(5)
+            if not record_as_bcd_string:
                 break
-            if len(record_as_bsd_string) != 5:
+            if len(record_as_bcd_string) != 5:
                 raise ValueError(":TODO:wrong length")
         else:
             # Read from Bit Banged Serial
-            record_as_bsd_string = ''
+            record_as_bcd_string = ''
             # Read 5 bytes of 2 chars
             for x in range(5):
                 raw_chars = in_file.read(2)
@@ -200,14 +219,18 @@ def readRecord(in_file):
                     raise ValueError(":TODO:wrong length")
 
                 # Swap chars
-                swapped_chars = raw_chars[0]+raw_chars[1]
-                # Append to record_as_bsd_string
-                record_as_bsd_string += chr(int(swapped_chars, 16))
-        record_as_integer_list = bcd_string_to_integer_list(record_as_bsd_string)
-        record_as_namedtuple = integer_list_to_named_tuple(record_as_integer_list)
-        adjusted_record_as_namedtuple = adjust_lap_hundreds(record_as_namedtuple)
+                swapped_chars = raw_chars[0] + raw_chars[1]
+                # Append to record_as_bcd_string
+                record_as_bcd_string += chr(int(swapped_chars, 16))
 
-#        yield adjusted_record_as_namedtuple
+        # Now process the input
+        record_as_integer_list = bcd_string_to_integer_list(
+            record_as_bcd_string)
+        record_as_namedtuple = integer_list_to_named_tuple(
+            record_as_integer_list)
+        adjusted_record_as_namedtuple = adjust_lap_hundreds(
+            record_as_namedtuple)
+
         yield adjusted_record_as_namedtuple
 
 
@@ -250,9 +273,28 @@ if __name__ == "__main__":
                       action='store_const',
                       const=1,
                       help="if reading HEX file")
-    parser.add_option("-f", "--infile",   dest="infile",   metavar="FILE",           default=sys.stdin,  help="Input file, stdin if not specified.")
-    parser.add_option("-o", "--outfile",  dest="outfile",  metavar="FILE",           default=sys.stdout, help="Output file, stdout if not specified.")
-    parser.add_option("-r", "--raceid",   dest="raceid",   metavar="NUM",  type=int, default=1,          help="Race ID to display.")
+    parser.add_option("--dump",
+                      dest="dumpmode",
+                      default=0,
+                      action='store_const',
+                      const=1,
+                      help="Dump raw data")
+    parser.add_option("-f", "--infile",
+                      dest="infile",
+                      metavar="FILE",
+                      default=sys.stdin,
+                      help="Input file, stdin if not specified.")
+    parser.add_option("-o", "--outfile",
+                      dest="outfile",
+                      metavar="FILE",
+                      default=sys.stdout,
+                      help="Output file, stdout if not specified.")
+    parser.add_option("-r", "--raceid",
+                      dest="raceid",
+                      metavar="NUM",
+                      type=int,
+                      default=1,
+                      help="Race ID to display.")
     (options, args) = parser.parse_args()
 
     print "infile =" + str(options.infile)
@@ -278,45 +320,49 @@ if __name__ == "__main__":
                 lap_time_minutes = record.minutes
                 lap_time_secs = record.seconds
                 lap_time_hundredths = record.hundredths
-                elapsed_secs += (lap_time_hours * 3600 + lap_time_minutes * 60 + lap_time_secs + lap_time_hundredths / 100.0)
-                pos_hundredths += lap_time_hundredths # int((elapsed_secs - pos_secs) * 100)
+                elapsed_secs += (lap_time_hours * 3600 + lap_time_minutes * 60
+                                 + lap_time_secs
+                                 + lap_time_hundredths / 100.0)
+                # int((elapsed_secs - pos_secs) * 100)
+                pos_hundredths += lap_time_hundredths
                 if pos_hundredths >= 100:
-                    pos_hundredths = pos_hundredths%100
+                    pos_hundredths = pos_hundredths % 100
                     pos_secs += 1
-                pos_secs += lap_time_secs # int(elapsed_secs - pos_hours * 3600 - pos_mins * 60)
+                # int(elapsed_secs - pos_hours * 3600 - pos_mins * 60)
+                pos_secs += lap_time_secs
                 if pos_secs >= 60:
-                    pos_secs = pos_secs%60
+                    pos_secs = pos_secs % 60
                     pos_mins += 1
-                pos_mins += lap_time_minutes # int((elapsed_secs - pos_hours * 3600) / 60)
+                # int((elapsed_secs - pos_hours * 3600) / 60)
+                pos_mins += lap_time_minutes
                 if pos_mins >= 60:
-                    pos_mins = pos_mins%60
+                    pos_mins = pos_mins % 60
                     pos_hours += 1
-                pos_hours += lap_time_hours # int(elapsed_secs/3600)
+                pos_hours += lap_time_hours  # int(elapsed_secs/3600)
                 if position != record.lap:
-                    raise ValueError("Mismatch between lap record and internal counter")
-                print "Finisher: " + str(position) + "  Finishing time: " + str(pos_hours) + " Hrs. " + str(pos_mins) + " Mins. " + str(pos_secs) + " Secs. " + str(pos_hundredths) + " Hundr. "
+                    raise ValueError(
+                        "Mismatch between lap record and internal counter")
+                print "Finisher: " + str(position) + "  Finishing time: " \
+                    + str(pos_hours) + " Hrs. " + str(pos_mins) + " Mins. " \
+                    + str(pos_secs) + " Secs. " \
+                    + str(pos_hundredths) + " Hundr. "
             elif record_type_name == 'RaceEnd':
                 print "Race finished"
             elif record_type_name == 'AvLapTime':
-                av_lap_time_hours = record.type%10
+                av_lap_time_hours = record.type % 10
                 av_lap_time_minutes = record.minutes
                 av_lap_time_secs = record.seconds
                 av_lap_time_hundredths = record.hundredths
-                print "Average Lap time: " + str(av_lap_time_hours) + " Hrs. " + str(av_lap_time_minutes) + " Mins. " + str(av_lap_time_secs) + " Secs. " + str(av_lap_time_hundredths) + " Hundr. "
+                print "Average Lap time: " + str(av_lap_time_hours) \
+                    + " Hrs. " + str(av_lap_time_minutes) + " Mins. " \
+                    + str(av_lap_time_secs) + " Secs. " \
+                    + str(av_lap_time_hundredths) + " Hundr. "
             elif record_type_name == 'FastestLapTime':
-                f_lap_time_hours = record.type%10
+                f_lap_time_hours = record.type % 10
                 f_lap_time_minutes = record.minutes
                 f_lap_time_secs = record.seconds
                 f_lap_time_hundredths = record.hundredths
-                print "Fastest Lap time: " + str(f_lap_time_hours) + " Hrs. " + str(f_lap_time_minutes) + " Mins. " + str(f_lap_time_secs) + " Secs. " + str(f_lap_time_hundredths) + " Hundr. "
-
-
-        # if record.type < 10:
-        #     current_race = record.id
-        # if (record.type == 20) and (current_race == options.raceid):
-        #     total_in_hundreths = record.minutes*60*100 + record.seconds*100 + record.hundreths
-        #     print "{},{}:{:02}.{:02},{}".format(record.lap,record.minutes,record.seconds,record.hundreths,total_in_hundreths)
-
-##############################################################################
-# vim: ts=4 sts=4 sw=4 tw=78 sta et
-##############################################################################
+                print "Fastest Lap time: " + str(f_lap_time_hours) \
+                    + " Hrs. " + str(f_lap_time_minutes) + " Mins. " \
+                    + str(f_lap_time_secs) + " Secs. " \
+                    + str(f_lap_time_hundredths) + " Hundr. "
