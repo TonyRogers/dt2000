@@ -1,3 +1,5 @@
 /**/*~
 /**/*.pyc
 /**/*.out
+Invert/build-cli/*
+!Invert/build-cli/*.hex
