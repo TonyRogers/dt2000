@@ -2,6 +2,7 @@ from collections import namedtuple
 import optparse
 import sys
 import serial
+import datetime
 
 
 def static_vars(**kwargs):
@@ -69,16 +70,6 @@ def integer_list_to_named_tuple(list_of_integers):
 
     # Dictionary mapping type id to record named tuples.
     valid_types = {
-        990: namedtuple("RaceHeader", "type year month day id"),
-        991: namedtuple("RaceHeader", "type year month day id"),
-        992: namedtuple("RaceHeader", "type year month day id"),
-        993: namedtuple("RaceHeader", "type year month day id"),
-        994: namedtuple("RaceHeader", "type year month day id"),
-        995: namedtuple("RaceHeader", "type year month day id"),
-        996: namedtuple("RaceHeader", "type year month day id"),
-        997: namedtuple("RaceHeader", "type year month day id"),
-        998: namedtuple("RaceHeader", "type year month day id"),
-        999: namedtuple("RaceHeader", "type year month day id"),
         10: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
         11: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
         12: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
@@ -130,15 +121,7 @@ def integer_list_to_named_tuple(list_of_integers):
         57: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
         58: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
         59: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
-        9961: namedtuple("Type61",     "type a b c laps"),
-        9966: namedtuple("Type66",     "type a b c laps"),
-        9967: namedtuple("Type67",     "type a b c laps"),
-        9968: namedtuple("Type68",     "type a b c laps"),
-        9937: namedtuple("Type73",     "type a b c laps"),
-        9974: namedtuple("Type74",     "type a b c laps"),
-        9986: namedtuple("Type86",     "type a b c laps"),
-        9988: namedtuple("Type88",     "type a b c laps"),
-        90: namedtuple("RaceHeader", "type year month day id"),
+        90: namedtuple("RaceHeader", "type year month day id")
     }
     # List of integers must be length of five.
     # print "list_of_integers = " + str(list_of_integers)
@@ -224,15 +207,20 @@ def readRecord(in_file):
                 record_as_bcd_string += chr(int(swapped_chars, 16))
 
         # Now process the input
+        print "Processing" + str(datetime.datetime.now())
         record_as_integer_list = bcd_string_to_integer_list(
             record_as_bcd_string)
         if options.dumpmode:
             d.write(record_as_bcd_string)
-        # print record_as_integer_list
+        print record_as_integer_list
+        sys.stdout.flush()
+        print "A" + str(datetime.datetime.now())
         record_as_namedtuple = integer_list_to_named_tuple(
             record_as_integer_list)
+        print "B" + str(datetime.datetime.now())
         adjusted_record_as_namedtuple = adjust_lap_hundreds(
             record_as_namedtuple)
+        print "C" + str(datetime.datetime.now())
 
         yield adjusted_record_as_namedtuple
 
@@ -316,6 +304,7 @@ if __name__ == "__main__":
             record_type_name = type(record).__name__
             if record_type_name == 'RaceHeader':
                 print "New Race Detected"
+                sys.stdout.flush()
                 elapsed_secs = 0L
                 position = 0
                 pos_hundredths = pos_secs = pos_mins = pos_hours = 0
@@ -352,8 +341,10 @@ if __name__ == "__main__":
                     + str(pos_hours) + " Hrs. " + str(pos_mins) + " Mins. " \
                     + str(pos_secs) + " Secs. " \
                     + str(pos_hundredths) + " Hundr. "
+                sys.stdout.flush()
             elif record_type_name == 'RaceEnd':
                 print "Race finished"
+                sys.stdout.flush()
             elif record_type_name == 'AvLapTime':
                 av_lap_time_hours = record.type % 10
                 av_lap_time_minutes = record.minutes
@@ -363,6 +354,7 @@ if __name__ == "__main__":
                     + " Hrs. " + str(av_lap_time_minutes) + " Mins. " \
                     + str(av_lap_time_secs) + " Secs. " \
                     + str(av_lap_time_hundredths) + " Hundr. "
+                sys.stdout.flush()
             elif record_type_name == 'FastestLapTime':
                 f_lap_time_hours = record.type % 10
                 f_lap_time_minutes = record.minutes
@@ -372,5 +364,6 @@ if __name__ == "__main__":
                     + " Hrs. " + str(f_lap_time_minutes) + " Mins. " \
                     + str(f_lap_time_secs) + " Secs. " \
                     + str(f_lap_time_hundredths) + " Hundr. "
+                sys.stdout.flush()
     if options.dumpmode:
         d.close()
