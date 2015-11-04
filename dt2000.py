@@ -141,7 +141,7 @@ def integer_list_to_named_tuple(list_of_integers):
         90: namedtuple("RaceHeader", "type year month day id"),
     }
     # List of integers must be length of five.
-    print "list_of_integers = " + str(list_of_integers)
+    # print "list_of_integers = " + str(list_of_integers)
     if len(list_of_integers) != 5:
         raise ValueError(
             "Unable to convert list of integers to tuple; \
@@ -226,6 +226,9 @@ def readRecord(in_file):
         # Now process the input
         record_as_integer_list = bcd_string_to_integer_list(
             record_as_bcd_string)
+        if options.dumpmode:
+            d.write(record_as_bcd_string)
+        # print record_as_integer_list
         record_as_namedtuple = integer_list_to_named_tuple(
             record_as_integer_list)
         adjusted_record_as_namedtuple = adjust_lap_hundreds(
@@ -264,7 +267,6 @@ def readRecords(infile):
     infile = openFile(infile)
     return [record for record in readRecord(infile)]
 
-
 if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.add_option("--hex",
@@ -297,8 +299,12 @@ if __name__ == "__main__":
                       help="Race ID to display.")
     (options, args) = parser.parse_args()
 
-    print "infile =" + str(options.infile)
+    print "infile = " + str(options.infile)
     print "hexmode = " + str(options.hexmode)
+    print "dumpmode = " + str(options.dumpmode)
+    if options.dumpmode:
+        d=open('dump', 'w')
+
     current_race = 0
     elapsed_secs = 0L
     position = 0
@@ -366,3 +372,5 @@ if __name__ == "__main__":
                     + " Hrs. " + str(f_lap_time_minutes) + " Mins. " \
                     + str(f_lap_time_secs) + " Secs. " \
                     + str(f_lap_time_hundredths) + " Hundr. "
+    if options.dumpmode:
+        d.close()
