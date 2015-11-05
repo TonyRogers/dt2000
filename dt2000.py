@@ -1,7 +1,6 @@
 import optparse
 import sys
 import serial
-import datetime
 
 
 def static_vars(**kwargs):
@@ -38,13 +37,9 @@ def bcd_to_int(bcd_byte):
 
     # Get the tens place; value must be a single digit.
     tens = int((ord(bcd_byte) >> 0) & 0x0F)
-    # if (tens < 0) or (tens > 9):
-    #     print("Invalid BCD digit; tens place is not 0-9.")
 
     # Get the ones place; value must be a single digit.
     ones = int((ord(bcd_byte) >> 4) & 0x0F)
-    # if (ones < 0) or (ones > 9):
-    #     raise ValueError("Invalid BCD digit; ones place is not 0-9.")
 
     return (tens * 10 + ones)
 
@@ -69,7 +64,6 @@ def integer_list_to_param_dict(list_of_integers):
     params = {"ptype": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 0, "p5": 0}
 
     # List of integers must be length of five.
-    # print "list_of_integers = " + str(list_of_integers)
     if len(list_of_integers) != 5:
         raise ValueError(
             "Unable to convert list of integers to tuple; \
@@ -100,7 +94,6 @@ def adjust_lap_hundreds_p_dict(param_dict):
     100 laps/runners within a single race, the ultrak498 timer overflows to
     the lap to 0.
     """
-    # print param_dict
 
     rtc = param_dict['ptype']
     if rtc != 'NAK':
@@ -142,20 +135,16 @@ def readRecord(in_file):
             raise ValueError(":TODO:wrong length")
 
         # Now process the input
-        # print "Processing" + str(datetime.datetime.now())
         record_as_integer_list = bcd_string_to_integer_list(
             record_as_bcd_string)
         if options.dumpmode:
             d.write(record_as_bcd_string)
-        print record_as_integer_list
-        sys.stdout.flush()
-        # print "A" + str(datetime.datetime.now())
+        if options.debugmode:
+            print record_as_integer_list
         p_dict = integer_list_to_param_dict(record_as_integer_list)
-        # print p_dict
-        # print "B" + str(datetime.datetime.now())
+
         if p_dict['ptype'] != 'NAK':
             p_dict = adjust_lap_hundreds_p_dict(p_dict)
-        # print "C" + str(datetime.datetime.now())
 
         yield p_dict
 
@@ -168,6 +157,8 @@ def openFile(infile):
 
     # First, use infile if it is a file object.
     if isinstance(infile, file):
+        if options.debugmode:
+            print "infile: " + str(infile) + " is an instance of a file"
         return infile
 
     # Next, check if it is a serial port we can open.  Ignore exceptions so we
@@ -179,6 +170,8 @@ def openFile(infile):
 
     # Finally, try to open it as a normal file.  Let open() throw its
     # exception normally on failure.
+    if options.debugmode:
+        print "Trying to open: " + str(infile) + " as a normal file"
     return open(infile, "rb")
 
 
@@ -198,6 +191,12 @@ if __name__ == "__main__":
                       action='store_const',
                       const=1,
                       help="Dump raw data")
+    parser.add_option("-d", "--debug",
+                      dest="debugmode",
+                      default=0,
+                      action='store_const',
+                      const=1,
+                      help="Dump internal stuff")
     parser.add_option("-f", "--infile",
                       dest="infile",
                       metavar="FILE",
@@ -216,8 +215,12 @@ if __name__ == "__main__":
                       help="Race ID to display.")
     (options, args) = parser.parse_args()
 
-    print "infile = " + str(options.infile)
-    print "dumpmode = " + str(options.dumpmode)
+    if options.debugmode:
+        print "debugmode = " + str(options.debugmode)
+        print "infile = " + str(options.infile)
+        print "outfile = " + str(options.outfile)
+        print "dumpmode = " + str(options.dumpmode)
+
     if options.dumpmode:
         d = open('dump', 'w')
 
@@ -229,15 +232,12 @@ if __name__ == "__main__":
     for record in readRecords(options.infile):
         rtc = record['ptype']
         if rtc != 'NAK':
-            # print "processing " + str(record)
             if rtc == 'raceheader':
                 print "New Race Detected"
-                sys.stdout.flush()
                 elapsed_secs = 0L
                 position = 0
                 pos_hundredths = pos_secs = pos_mins = pos_hours = 0
             elif rtc == 'laptime':
-                # print "Process a finisher"
                 position += 1
                 lap_time_hours = record['p1'] % 10
                 lap_time_minutes = record['p2']
@@ -246,22 +246,19 @@ if __name__ == "__main__":
                 elapsed_secs += (lap_time_hours * 3600 + lap_time_minutes * 60
                                  + lap_time_secs
                                  + lap_time_hundredths / 100.0)
-                # int((elapsed_secs - pos_secs) * 100)
                 pos_hundredths += lap_time_hundredths
                 if pos_hundredths >= 100:
                     pos_hundredths = pos_hundredths % 100
                     pos_secs += 1
-                # int(elapsed_secs - pos_hours * 3600 - pos_mins * 60)
                 pos_secs += lap_time_secs
                 if pos_secs >= 60:
                     pos_secs = pos_secs % 60
                     pos_mins += 1
-                # int((elapsed_secs - pos_hours * 3600) / 60)
                 pos_mins += lap_time_minutes
                 if pos_mins >= 60:
                     pos_mins = pos_mins % 60
                     pos_hours += 1
-                pos_hours += lap_time_hours  # int(elapsed_secs/3600)
+                pos_hours += lap_time_hours
                 if position != record['p5']:
                     raise ValueError(
                         "Mismatch between lap record and internal counter")
@@ -269,10 +266,8 @@ if __name__ == "__main__":
                     + str(pos_hours) + " Hrs. " + str(pos_mins) + " Mins. " \
                     + str(pos_secs) + " Secs. " \
                     + str(pos_hundredths) + " Hundr. "
-                sys.stdout.flush()
             elif rtc == 'raceend':
                 print "Race finished"
-                sys.stdout.flush()
             elif rtc == 'avtime':
                 av_lap_time_hours = record['p1'] % 10
                 av_lap_time_minutes = record['p2']
@@ -282,7 +277,6 @@ if __name__ == "__main__":
                     + " Hrs. " + str(av_lap_time_minutes) + " Mins. " \
                     + str(av_lap_time_secs) + " Secs. " \
                     + str(av_lap_time_hundredths) + " Hundr. "
-                sys.stdout.flush()
             elif rtc == 'fastesttime':
                 f_lap_time_hours = record['p1'] % 10
                 f_lap_time_minutes = record['p2']
@@ -292,6 +286,5 @@ if __name__ == "__main__":
                     + " Hrs. " + str(f_lap_time_minutes) + " Mins. " \
                     + str(f_lap_time_secs) + " Secs. " \
                     + str(f_lap_time_hundredths) + " Hundr. "
-                sys.stdout.flush()
     if options.dumpmode:
         d.close()
