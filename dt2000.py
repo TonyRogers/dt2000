@@ -1,4 +1,3 @@
-from collections import namedtuple
 import optparse
 import sys
 import serial
@@ -90,131 +89,10 @@ def integer_list_to_param_dict(list_of_integers):
                 params['p4'] = list_of_integers[3]
                 params['p5'] = list_of_integers[4]
 
-    # if params["ptype"] == 'NAK':
-    #     # raise ValueError("Unable to convert list of integers to tuple; \
-    #     # unknown record type [%d]." % tuple_type)
-    #     return
-
     return params
 
 
-def integer_list_to_named_tuple(list_of_integers):
-    """
-    Converts a list of integers read from the ultrak498 into a named tuple
-    based upon the type.  The type is determiend by the first integer in the
-    list.  Since all tuples contain five fields, the list of integers must
-    have a length of five.
-
-    Returns a named tuple based on the type,
-    """
-
-    # Dictionary mapping type id to record named tuples.
-    valid_types = {
-        10: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
-        11: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
-        12: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
-        13: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
-        14: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
-        15: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
-        16: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
-        17: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
-        18: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
-        19: namedtuple("LapTime",    "type minutes seconds hundredths lap"),
-        20: namedtuple("AbsTime",    "type minutes seconds hundreths lap"),
-        30: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
-        31: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
-        32: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
-        33: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
-        34: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
-        35: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
-        36: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
-        37: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
-        38: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
-        39: namedtuple("AvLapTime",   "type minutes seconds hundredths laps"),
-        40: namedtuple("FastestLapTime",
-                       "type minutes seconds hundredths laps"),
-        41: namedtuple("FastestLapTime",
-                       "type minutes seconds hundredths laps"),
-        42: namedtuple("FastestLapTime",
-                       "type minutes seconds hundredths laps"),
-        43: namedtuple("FastestLapTime",
-                       "type minutes seconds hundredths laps"),
-        44: namedtuple("FastestLapTime",
-                       "type minutes seconds hundredths laps"),
-        45: namedtuple("FastestLapTime",
-                       "type minutes seconds hundredths laps"),
-        46: namedtuple("FastestLapTime",
-                       "type minutes seconds hundredths laps"),
-        47: namedtuple("FastestLapTime",
-                       "type minutes seconds hundredths laps"),
-        48: namedtuple("FastestLapTime",
-                       "type minutes seconds hundredths laps"),
-        49: namedtuple("FastestLapTime",
-                       "type minutes seconds hundredths laps"),
-        50: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
-        51: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
-        52: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
-        53: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
-        54: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
-        55: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
-        56: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
-        57: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
-        58: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
-        59: namedtuple("RaceEnd",    "type minutes seconds hundreths laps"),
-        90: namedtuple("RaceHeader", "type year month day id")
-    }
-    # List of integers must be length of five.
-    # print "list_of_integers = " + str(list_of_integers)
-    if len(list_of_integers) != 5:
-        raise ValueError(
-            "Unable to convert list of integers to tuple; \
-             incorrect number of integers.")
-
-    # First byte is the type; type must be known.
-    tuple_type = list_of_integers[0]
-    if tuple_type not in valid_types:
-        # raise ValueError("Unable to convert list of integers to tuple; \
-        # unknown record type [%d]." % tuple_type)
-        return
-    else:
-        # Create a namedtuple based upon the tuple_type.
-        named_tuple = valid_types[tuple_type]._make(list_of_integers)
-
-    return named_tuple
-
-
 @static_vars(lap_hundreds=0, abs_hundreds=0)
-def adjust_lap_hundreds(record):
-    """Adjusts the lap records to account for more than 99 laps/runners.
-
-    As BCD cannot represent a value greater than 100, if there are more than
-    100 laps/runners within a single race, the ultrak498 timer overflows to
-    the lap to 0.
-    """
-    record_type_name = type(record).__name__
-
-    # Reset hundreds place when a new races starts.
-    if record_type_name == 'RaceHeader':
-        adjust_lap_hundreds.lap_hundreds = 0
-        adjust_lap_hundreds.abs_hundreds = 0
-
-    # Adjust lap by hundreds place; increment on overflow.
-    elif record_type_name == 'LapTime':
-        if record.lap == 0:
-            adjust_lap_hundreds.lap_hundreds += 100
-        record = record._replace(
-            lap=(record.lap + adjust_lap_hundreds.lap_hundreds))
-
-    # Adjust abs by hundreds place; increment on overflow.
-    elif record_type_name == 'AbsTime':
-        if record.lap == 0:
-            adjust_lap_hundreds.abs_hundreds += 100
-        record = record._replace(
-            lap=(record.lap + adjust_lap_hundreds.abs_hundreds))
-
-    return record
-
-
 def adjust_lap_hundreds_p_dict(param_dict):
     """Adjusts the lap records to account for more than 99 laps/runners.
 
@@ -228,21 +106,23 @@ def adjust_lap_hundreds_p_dict(param_dict):
     if rtc != 'NAK':
         # Reset hundreds place when a new races starts.
         if rtc == 'raceheader':
-            adjust_lap_hundreds.lap_hundreds = 0
-            adjust_lap_hundreds.abs_hundreds = 0
+            adjust_lap_hundreds_p_dict.lap_hundreds = 0
+            adjust_lap_hundreds_p_dict.abs_hundreds = 0
 
         # Adjust lap by hundreds place; increment on overflow.
         elif rtc == 'laptime':
             # type minutes seconds hundreths laps
             if param_dict['p5'] == 0:
-                adjust_lap_hundreds.lap_hundreds += 100
-            param_dict['p5'] = param_dict['p5'] + adjust_lap_hundreds.lap_hundreds
+                adjust_lap_hundreds_p_dict.lap_hundreds += 100
+            param_dict['p5'] = param_dict['p5'] \
+                + adjust_lap_hundreds_p_dict.lap_hundreds
 
         # Adjust abs by hundreds place; increment on overflow.
         elif rtc == 'abstime':
             if param_dict['p5'] == 0:
-                adjust_lap_hundreds.lap_hundreds += 100
-            param_dict['p5'] = param_dict['p5'] + adjust_lap_hundreds.lap_hundreds
+                adjust_lap_hundreds_p_dict.lap_hundreds += 100
+            param_dict['p5'] = param_dict['p5'] \
+                + adjust_lap_hundreds_p_dict.lap_hundreds
 
     return param_dict
 
@@ -254,29 +134,12 @@ def readRecord(in_file):
     """
     while True:
 
-        if not options.hexmode:
-            # Records are always five bytes wide; read one record.
-            record_as_bcd_string = in_file.read(5)
-            if not record_as_bcd_string:
-                break
-            if len(record_as_bcd_string) != 5:
-                raise ValueError(":TODO:wrong length")
-        else:
-            # Read from Bit Banged Serial
-            record_as_bcd_string = ''
-            # Read 5 bytes of 2 chars
-            for x in range(5):
-                raw_chars = in_file.read(2)
-                print "Read " + raw_chars
-                if not raw_chars:
-                    return
-                if len(raw_chars) != 2:
-                    raise ValueError(":TODO:wrong length")
-
-                # Swap chars
-                swapped_chars = raw_chars[0] + raw_chars[1]
-                # Append to record_as_bcd_string
-                record_as_bcd_string += chr(int(swapped_chars, 16))
+        # Records are always five bytes wide; read one record.
+        record_as_bcd_string = in_file.read(5)
+        if not record_as_bcd_string:
+            break
+        if len(record_as_bcd_string) != 5:
+            raise ValueError(":TODO:wrong length")
 
         # Now process the input
         # print "Processing" + str(datetime.datetime.now())
@@ -286,20 +149,14 @@ def readRecord(in_file):
             d.write(record_as_bcd_string)
         print record_as_integer_list
         sys.stdout.flush()
-        print "A" + str(datetime.datetime.now())
-        # record_as_namedtuple = integer_list_to_named_tuple(
-            # record_as_integer_list)
+        # print "A" + str(datetime.datetime.now())
         p_dict = integer_list_to_param_dict(record_as_integer_list)
-        print p_dict
-        # print "Named tuple returned as " + str(record_as_namedtuple)
-        print "B" + str(datetime.datetime.now())
-        # adjusted_record_as_namedtuple = adjust_lap_hundreds(
-        #     record_as_namedtuple)
+        # print p_dict
+        # print "B" + str(datetime.datetime.now())
         if p_dict['ptype'] != 'NAK':
             p_dict = adjust_lap_hundreds_p_dict(p_dict)
-        print "C" + str(datetime.datetime.now())
+        # print "C" + str(datetime.datetime.now())
 
-        # yield adjusted_record_as_namedtuple
         yield p_dict
 
 
@@ -335,12 +192,6 @@ def readRecords(infile):
 
 if __name__ == "__main__":
     parser = optparse.OptionParser()
-    parser.add_option("--hex",
-                      dest="hexmode",
-                      default=0,
-                      action='store_const',
-                      const=1,
-                      help="if reading HEX file")
     parser.add_option("--dump",
                       dest="dumpmode",
                       default=0,
@@ -366,10 +217,9 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
 
     print "infile = " + str(options.infile)
-    print "hexmode = " + str(options.hexmode)
     print "dumpmode = " + str(options.dumpmode)
     if options.dumpmode:
-        d=open('dump', 'w')
+        d = open('dump', 'w')
 
     current_race = 0
     elapsed_secs = 0L
