@@ -58,6 +58,46 @@ def bcd_string_to_integer_list(bcd_string):
     return [bcd_to_int(byte) for byte in bcd_string]
 
 
+def integer_list_to_param_dict(list_of_integers):
+    valid_types = {}
+    valid_types["laptime"] = range(10, 20)
+    valid_types["abstime"] = range(20, 30)
+    valid_types["avtime"] = range(30, 40)
+    valid_types["fastesttime"] = range(40, 50)
+    valid_types["raceend"] = range(50, 60)
+    valid_types["raceheader"] = [90]
+
+    params = {"ptype": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 0, "p5": 0}
+
+    # List of integers must be length of five.
+    # print "list_of_integers = " + str(list_of_integers)
+    if len(list_of_integers) != 5:
+        raise ValueError(
+            "Unable to convert list of integers to tuple; \
+             incorrect number of integers.")
+
+    # First byte is the type; type must be known.
+    params["ptype"] = 'NAK'
+    msg_type = list_of_integers[0]
+    for vt in valid_types.keys():
+        for tc in valid_types[vt]:
+            if msg_type == tc:
+                # Got a match
+                params["ptype"] = vt
+                params['p1'] = list_of_integers[0]
+                params['p2'] = list_of_integers[1]
+                params['p3'] = list_of_integers[2]
+                params['p4'] = list_of_integers[3]
+                params['p5'] = list_of_integers[4]
+
+    # if params["ptype"] == 'NAK':
+    #     # raise ValueError("Unable to convert list of integers to tuple; \
+    #     # unknown record type [%d]." % tuple_type)
+    #     return
+
+    return params
+
+
 def integer_list_to_named_tuple(list_of_integers):
     """
     Converts a list of integers read from the ultrak498 into a named tuple
@@ -175,6 +215,38 @@ def adjust_lap_hundreds(record):
     return record
 
 
+def adjust_lap_hundreds_p_dict(param_dict):
+    """Adjusts the lap records to account for more than 99 laps/runners.
+
+    As BCD cannot represent a value greater than 100, if there are more than
+    100 laps/runners within a single race, the ultrak498 timer overflows to
+    the lap to 0.
+    """
+    # print param_dict
+
+    rtc = param_dict['ptype']
+    if rtc != 'NAK':
+        # Reset hundreds place when a new races starts.
+        if rtc == 'raceheader':
+            adjust_lap_hundreds.lap_hundreds = 0
+            adjust_lap_hundreds.abs_hundreds = 0
+
+        # Adjust lap by hundreds place; increment on overflow.
+        elif rtc == 'laptime':
+            # type minutes seconds hundreths laps
+            if param_dict['p5'] == 0:
+                adjust_lap_hundreds.lap_hundreds += 100
+            param_dict['p5'] = param_dict['p5'] + adjust_lap_hundreds.lap_hundreds
+
+        # Adjust abs by hundreds place; increment on overflow.
+        elif rtc == 'abstime':
+            if param_dict['p5'] == 0:
+                adjust_lap_hundreds.lap_hundreds += 100
+            param_dict['p5'] = param_dict['p5'] + adjust_lap_hundreds.lap_hundreds
+
+    return param_dict
+
+
 def readRecord(in_file):
     """Generator to read each record from the input file.
 
@@ -207,7 +279,7 @@ def readRecord(in_file):
                 record_as_bcd_string += chr(int(swapped_chars, 16))
 
         # Now process the input
-        print "Processing" + str(datetime.datetime.now())
+        # print "Processing" + str(datetime.datetime.now())
         record_as_integer_list = bcd_string_to_integer_list(
             record_as_bcd_string)
         if options.dumpmode:
@@ -215,14 +287,20 @@ def readRecord(in_file):
         print record_as_integer_list
         sys.stdout.flush()
         print "A" + str(datetime.datetime.now())
-        record_as_namedtuple = integer_list_to_named_tuple(
-            record_as_integer_list)
+        # record_as_namedtuple = integer_list_to_named_tuple(
+            # record_as_integer_list)
+        p_dict = integer_list_to_param_dict(record_as_integer_list)
+        print p_dict
+        # print "Named tuple returned as " + str(record_as_namedtuple)
         print "B" + str(datetime.datetime.now())
-        adjusted_record_as_namedtuple = adjust_lap_hundreds(
-            record_as_namedtuple)
+        # adjusted_record_as_namedtuple = adjust_lap_hundreds(
+        #     record_as_namedtuple)
+        if p_dict['ptype'] != 'NAK':
+            p_dict = adjust_lap_hundreds_p_dict(p_dict)
         print "C" + str(datetime.datetime.now())
 
-        yield adjusted_record_as_namedtuple
+        # yield adjusted_record_as_namedtuple
+        yield p_dict
 
 
 def openFile(infile):
@@ -299,22 +377,22 @@ if __name__ == "__main__":
     pos_hundredths = pos_secs = pos_mins = pos_hours = 0
 
     for record in readRecords(options.infile):
-        if record is not None:
-            # print record
-            record_type_name = type(record).__name__
-            if record_type_name == 'RaceHeader':
+        rtc = record['ptype']
+        if rtc != 'NAK':
+            # print "processing " + str(record)
+            if rtc == 'raceheader':
                 print "New Race Detected"
                 sys.stdout.flush()
                 elapsed_secs = 0L
                 position = 0
                 pos_hundredths = pos_secs = pos_mins = pos_hours = 0
-            elif record_type_name == 'LapTime':
+            elif rtc == 'laptime':
                 # print "Process a finisher"
                 position += 1
-                lap_time_hours = record.type % 10
-                lap_time_minutes = record.minutes
-                lap_time_secs = record.seconds
-                lap_time_hundredths = record.hundredths
+                lap_time_hours = record['p1'] % 10
+                lap_time_minutes = record['p2']
+                lap_time_secs = record['p3']
+                lap_time_hundredths = record['p4']
                 elapsed_secs += (lap_time_hours * 3600 + lap_time_minutes * 60
                                  + lap_time_secs
                                  + lap_time_hundredths / 100.0)
@@ -334,7 +412,7 @@ if __name__ == "__main__":
                     pos_mins = pos_mins % 60
                     pos_hours += 1
                 pos_hours += lap_time_hours  # int(elapsed_secs/3600)
-                if position != record.lap:
+                if position != record['p5']:
                     raise ValueError(
                         "Mismatch between lap record and internal counter")
                 print "Finisher: " + str(position) + "  Finishing time: " \
@@ -342,24 +420,24 @@ if __name__ == "__main__":
                     + str(pos_secs) + " Secs. " \
                     + str(pos_hundredths) + " Hundr. "
                 sys.stdout.flush()
-            elif record_type_name == 'RaceEnd':
+            elif rtc == 'raceend':
                 print "Race finished"
                 sys.stdout.flush()
-            elif record_type_name == 'AvLapTime':
-                av_lap_time_hours = record.type % 10
-                av_lap_time_minutes = record.minutes
-                av_lap_time_secs = record.seconds
-                av_lap_time_hundredths = record.hundredths
+            elif rtc == 'avtime':
+                av_lap_time_hours = record['p1'] % 10
+                av_lap_time_minutes = record['p2']
+                av_lap_time_secs = record['p3']
+                av_lap_time_hundredths = record['p4']
                 print "Average Lap time: " + str(av_lap_time_hours) \
                     + " Hrs. " + str(av_lap_time_minutes) + " Mins. " \
                     + str(av_lap_time_secs) + " Secs. " \
                     + str(av_lap_time_hundredths) + " Hundr. "
                 sys.stdout.flush()
-            elif record_type_name == 'FastestLapTime':
-                f_lap_time_hours = record.type % 10
-                f_lap_time_minutes = record.minutes
-                f_lap_time_secs = record.seconds
-                f_lap_time_hundredths = record.hundredths
+            elif rtc == 'fastesttime':
+                f_lap_time_hours = record['p1'] % 10
+                f_lap_time_minutes = record['p2']
+                f_lap_time_secs = record['p3']
+                f_lap_time_hundredths = record['p4']
                 print "Fastest Lap time: " + str(f_lap_time_hours) \
                     + " Hrs. " + str(f_lap_time_minutes) + " Mins. " \
                     + str(f_lap_time_secs) + " Secs. " \
