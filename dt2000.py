@@ -70,7 +70,7 @@ def integer_list_to_param_dict(list_of_integers):
             "Unable to convert list of integers to tuple; \
              incorrect number of integers.")
 
-    # First byte is the type; type must be known.
+    # First byte is the type; default to unknown - NAK
     params["ptype"] = 'NAK'
     msg_type = list_of_integers[0]
     for vt in valid_types.keys():
@@ -231,91 +231,97 @@ if __name__ == "__main__":
         op = options.outfile
     else:
         op = open(options.outfile, 'wb')
-    op.write("Hello world!\n")
+    if options.debugmode:
+        op.write("Hello world!\n")
+
     csvwriter = csv.writer(op, delimiter=',',
                            quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    csvwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
-    csvwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
+    if options.debugmode:
+        csvwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
+        csvwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
+
     current_race = 0
     elapsed_secs = 0L
     position = 0
     pos_hundredths = pos_secs = pos_mins = pos_hours = 0
 
     for record in readRecords(options.infile):
-        rtc = record['ptype']
-        if rtc != 'NAK':
-            if rtc == 'raceheader':
-                csvwriter.writerow(['New Race Detected'])
-                # print "New Race Detected"
-                elapsed_secs = 0L
-                position = 0
-                pos_hundredths = pos_secs = pos_mins = pos_hours = 0
-            elif rtc == 'laptime':
-                position += 1
-                lap_time_hours = record['p1'] % 10
-                lap_time_minutes = record['p2']
-                lap_time_secs = record['p3']
-                lap_time_hundredths = record['p4']
-                elapsed_secs += (lap_time_hours * 3600 + lap_time_minutes * 60
-                                 + lap_time_secs
-                                 + lap_time_hundredths / 100.0)
-                pos_hundredths += lap_time_hundredths
-                if pos_hundredths >= 100:
-                    pos_hundredths = pos_hundredths % 100
-                    pos_secs += 1
-                pos_secs += lap_time_secs
-                if pos_secs >= 60:
-                    pos_secs = pos_secs % 60
-                    pos_mins += 1
-                pos_mins += lap_time_minutes
-                if pos_mins >= 60:
-                    pos_mins = pos_mins % 60
-                    pos_hours += 1
-                pos_hours += lap_time_hours
-                if position != record['p5']:
-                    raise ValueError(
-                        "Mismatch between lap record and internal counter")
-                csvwriter.writerow(['Finisher']
-                                   + [str(position)]
-                                   + [str(pos_hours)]
-                                   + [str(pos_mins)]
-                                   + [str(pos_secs)]
-                                   + [str(pos_hundredths)])
-                # print "Finisher: " + str(position) + "  Finishing time: " \
-                #     + str(pos_hours) + " Hrs. " + str(pos_mins) + " Mins. " \
-                #     + str(pos_secs) + " Secs. " \
-                #     + str(pos_hundredths) + " Hundr. "
-            elif rtc == 'raceend':
-                # print "Race finished"
-                csvwriter.writerow(['Race Finished'])
-            elif rtc == 'avtime':
-                av_lap_time_hours = record['p1'] % 10
-                av_lap_time_minutes = record['p2']
-                av_lap_time_secs = record['p3']
-                av_lap_time_hundredths = record['p4']
-                csvwriter.writerow(['Average Lap Time']
-                                   + [str(av_lap_time_hours)]
-                                   + [str(av_lap_time_minutes)]
-                                   + [str(av_lap_time_secs)]
-                                   + [str(av_lap_time_hundredths)])
-                # print "Average Lap time: " + str(av_lap_time_hours) \
-                #     + " Hrs. " + str(av_lap_time_minutes) + " Mins. " \
-                #     + str(av_lap_time_secs) + " Secs. " \
-                #     + str(av_lap_time_hundredths) + " Hundr. "
-            elif rtc == 'fastesttime':
-                f_lap_time_hours = record['p1'] % 10
-                f_lap_time_minutes = record['p2']
-                f_lap_time_secs = record['p3']
-                f_lap_time_hundredths = record['p4']
-                csvwriter.writerow(['Fastest Lap Time']
-                                   + [str(f_lap_time_hours)]
-                                   + [str(f_lap_time_minutes)]
-                                   + [str(f_lap_time_secs)]
-                                   + [str(f_lap_time_hundredths)])
-                # print "Fastest Lap time: " + str(f_lap_time_hours) \
-                #     + " Hrs. " + str(f_lap_time_minutes) + " Mins. " \
-                #     + str(f_lap_time_secs) + " Secs. " \
-                #     + str(f_lap_time_hundredths) + " Hundr. "
-    if options.dumpmode:
-        d.close()
+        if not options.dumpmode:
+            rtc = record['ptype']
+            if rtc != 'NAK':
+                if rtc == 'raceheader':
+                    csvwriter.writerow(['New Race Detected'])
+                    # print "New Race Detected"
+                    elapsed_secs = 0L
+                    position = 0
+                    pos_hundredths = pos_secs = pos_mins = pos_hours = 0
+                elif rtc == 'laptime':
+                    position += 1
+                    lap_time_hours = record['p1'] % 10
+                    lap_time_minutes = record['p2']
+                    lap_time_secs = record['p3']
+                    lap_time_hundredths = record['p4']
+                    elapsed_secs += (lap_time_hours * 3600 + lap_time_minutes * 60
+                                     + lap_time_secs
+                                     + lap_time_hundredths / 100.0)
+                    pos_hundredths += lap_time_hundredths
+                    if pos_hundredths >= 100:
+                        pos_hundredths = pos_hundredths % 100
+                        pos_secs += 1
+                    pos_secs += lap_time_secs
+                    if pos_secs >= 60:
+                        pos_secs = pos_secs % 60
+                        pos_mins += 1
+                    pos_mins += lap_time_minutes
+                    if pos_mins >= 60:
+                        pos_mins = pos_mins % 60
+                        pos_hours += 1
+                    pos_hours += lap_time_hours
+                    if position != record['p5']:
+                        raise ValueError(
+                            "Mismatch between lap record and internal counter")
+                    csvwriter.writerow(['Finisher']
+                                       + [str(position)]
+                                       + [str(pos_hours)]
+                                       + [str(pos_mins)]
+                                       + [str(pos_secs)]
+                                       + [str(pos_hundredths)])
+                    # print "Finisher: " + str(position) + "  Finishing time: " \
+                    #     + str(pos_hours) + " Hrs. " + str(pos_mins) + " Mins. " \
+                    #     + str(pos_secs) + " Secs. " \
+                    #     + str(pos_hundredths) + " Hundr. "
+                elif rtc == 'raceend':
+                    # print "Race finished"
+                    csvwriter.writerow(['Race Finished'])
+                elif rtc == 'avtime':
+                    av_lap_time_hours = record['p1'] % 10
+                    av_lap_time_minutes = record['p2']
+                    av_lap_time_secs = record['p3']
+                    av_lap_time_hundredths = record['p4']
+                    csvwriter.writerow(['Average Lap Time']
+                                       + [str(av_lap_time_hours)]
+                                       + [str(av_lap_time_minutes)]
+                                       + [str(av_lap_time_secs)]
+                                       + [str(av_lap_time_hundredths)])
+                    # print "Average Lap time: " + str(av_lap_time_hours) \
+                    #     + " Hrs. " + str(av_lap_time_minutes) + " Mins. " \
+                    #     + str(av_lap_time_secs) + " Secs. " \
+                    #     + str(av_lap_time_hundredths) + " Hundr. "
+                elif rtc == 'fastesttime':
+                    f_lap_time_hours = record['p1'] % 10
+                    f_lap_time_minutes = record['p2']
+                    f_lap_time_secs = record['p3']
+                    f_lap_time_hundredths = record['p4']
+                    csvwriter.writerow(['Fastest Lap Time']
+                                       + [str(f_lap_time_hours)]
+                                       + [str(f_lap_time_minutes)]
+                                       + [str(f_lap_time_secs)]
+                                       + [str(f_lap_time_hundredths)])
+                    # print "Fastest Lap time: " + str(f_lap_time_hours) \
+                    #     + " Hrs. " + str(f_lap_time_minutes) + " Mins. " \
+                    #     + str(f_lap_time_secs) + " Secs. " \
+                    #     + str(f_lap_time_hundredths) + " Hundr. "
+        else:
+            if options.dumpmode:
+                d.close()
     op.close()
