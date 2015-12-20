@@ -134,9 +134,9 @@ def adjust_lap_hundreds_p_dict(param_dict):
         # Adjust abs by hundreds place; increment on overflow.
         elif rtc == 'abstime':
             if param_dict['p5'] == 0:
-                adjust_lap_hundreds_p_dict.lap_hundreds += 100
+                adjust_lap_hundreds_p_dict.abs_hundreds += 100
             param_dict['p5'] = param_dict['p5'] \
-                + adjust_lap_hundreds_p_dict.lap_hundreds
+                + adjust_lap_hundreds_p_dict.abs_hundreds
 
     return param_dict
 
